@@ -16,6 +16,7 @@ cd $1
 while read url; do
   if [ -n "$url" ]; then
     echo Vendoring $url | indent
-    curl -L --silent $url | jar xf
+    curl -L --silent $url > $1/bin/packer.zip
+    cd $1/bin && jar xf packer.zip && rm packer.zip
   fi
 done < .packer_url
