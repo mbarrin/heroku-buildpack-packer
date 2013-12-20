@@ -1,0 +1,8 @@
+#!/bin/bash
+
+if [ -f $1/.packer_url ]; then
+    echo "PackerBinaries"
+    exit 0
+else
+    exit 1
+fi
