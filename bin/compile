@@ -1,22 +1,33 @@
 #!/bin/bash
 
+set -eo pipefail
+
 indent() {
     sed -u 's/^/       /'
 }
 
+cd "$1"
+
 echo "-----> Found a .packer_url file"
 
-if [ ! -s $1/.packer_url ]; then
+url="$(< .packer_url)"
+if [ -z "$url" ]; then
     echo ".packer_url empty. Skipping." | indent
     exit 0
 fi
 
-cd $1
+if which unzip >/dev/null; then
+    unpack_command="unzip"
+elif which jar >/dev/null; then
+    unpack_command="jar xf"
+else
+    echo "Need unzip or jar available to unpack." >&2
+    exit 1
+fi
 
-while read url; do
-  if [ -n "$url" ]; then
-    echo Vendoring $url | indent
-    curl -L --silent $url > $1/bin/packer.zip
-    cd $1/bin && jar xf packer.zip && rm packer.zip
-  fi
-done < .packer_url
+echo "Vendoring $url" | indent
+curl -L --silent --fail --retry 3 "$url" > "$1/bin/packer.zip"
+(cd "$1/bin" && $unpack_command packer.zip && rm packer.zip)
+
+mkdir -p .profile.d
+echo 'export PATH="$HOME/bin:$PATH"' > .profile.d/packer.sh
